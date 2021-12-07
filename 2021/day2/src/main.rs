@@ -26,6 +26,7 @@ impl Eq for Instruction {}
 struct EndPosition {
     horizontal: i32,
     vertical: i32,
+    aim: i32,
 }
 
 impl PartialEq for EndPosition {
@@ -72,12 +73,12 @@ fn read_instructions(lines: &[String]) -> Vec<Instruction> {
 }
 
 fn find_end_position(instructions: &[Instruction]) -> EndPosition {
-    let initial = EndPosition {horizontal: 0, vertical: 0};
+    let initial = EndPosition {horizontal: 0, vertical: 0, aim: 0};
     instructions.iter().fold(initial, |acc, instr| {
         match instr {
-            Instruction::Forward(v) => EndPosition { horizontal: acc.horizontal + v, ..acc },
-            Instruction::Up(v) => EndPosition { vertical: acc.vertical - v, ..acc },
-            Instruction::Down(v) => EndPosition { vertical: acc.vertical + v, ..acc },
+            Instruction::Forward(v) => EndPosition { horizontal: acc.horizontal + v, vertical: acc.vertical + (v * acc.aim), ..acc },
+            Instruction::Up(v) => EndPosition { aim: acc.aim - v, ..acc },
+            Instruction::Down(v) => EndPosition { aim: acc.aim + v, ..acc },
         }
     })
 }
@@ -120,7 +121,7 @@ mod tests {
             Instruction::Forward(2),
         ];
 
-        assert_eq!(find_end_position(&example), EndPosition { horizontal: 15, vertical: 10 });
+        assert_eq!(find_end_position(&example), EndPosition { horizontal: 15, vertical: 60, aim: 10 });
     }
 }
 
