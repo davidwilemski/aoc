@@ -14,7 +14,7 @@ fn main() -> Result<(), std::io::Error> {
     println!("bingo draws: {:?}", bingo_draws);
 
     let bingo_lines: Vec<String> = lines.map(|l| l.unwrap()).collect();
-    let bingo_boards = build_bingo_boards(&bingo_lines);
+    let mut bingo_boards = build_bingo_boards(&bingo_lines);
 
     for i in 1..(bingo_draws.len()) {
         let selected: BTreeSet<i32> = BTreeSet::from_iter(bingo_draws[0..i].iter().cloned());
@@ -31,14 +31,40 @@ fn main() -> Result<(), std::io::Error> {
             // 86 + 77 + 87 + 79 + 52 + 17 + 20 + 30 + 48 + 25 + 13 + 9 + 47 + 45 + 97 + 15 + 59 = 806
             // last selected = 73
             // answer: 806 * 73 = 58838
-            return Ok(());
+            break;
         }
     }
 
+    let mut winning_boards: Vec<(BingoBoard, i32)> = vec![];
+    for i in 1..(bingo_draws.len()) {
+        let selected: BTreeSet<i32> = BTreeSet::from_iter(bingo_draws[0..i].iter().cloned());
+        println!("selected: {:?}", bingo_draws[0..i].iter());
+        let (mut has_bingo, no_bingo): (Vec<BingoBoard>, Vec<BingoBoard>) = bingo_boards.drain(..).partition(|b| b.has_bingo(&selected));
+        // let has_bingo = bingo_boards.iter().filter(|b| b.has_bingo(&selected)).collect::<Vec<&BingoBoard>>();
+        println!("has bingo len: {}", has_bingo.len());
+
+        for board in has_bingo {
+            let score = board.score(&selected, bingo_draws[i - 1]);
+            winning_boards.push((board.clone(), score));
+        }
+
+        if no_bingo.len() == 0 {
+            break;
+        }
+        bingo_boards = no_bingo;
+
+    }
+
+    winning_boards = winning_boards.drain(..).filter(|(_, s)| *s != 0).collect();
+    println!("length of winning_boards: {}", winning_boards.len());
+    println!("last bingo board to win: {:?}", winning_boards[winning_boards.len() - 1].0);
+    println!("last bingo board to win score: {:?}", winning_boards[winning_boards.len() - 1].1);
+
+    println!("length of winning_boards: {}", winning_boards.len());
     Ok(())
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 struct BingoBoard {
     board: Vec<i32>, // board (single vec storing 5x5 board)
 }
@@ -52,10 +78,10 @@ impl BingoBoard {
 
     fn score(&self, selected_nums: &BTreeSet<i32>, last_selected: i32) -> i32 {
         let not_selected_nums = BTreeSet::from_iter(self.board.clone().into_iter()).difference(selected_nums).map(|v| *v).collect::<Vec<i32>>();
-        println!("not selected nums: {:?}", not_selected_nums);
+        // println!("not selected nums: {:?}", not_selected_nums);
         let not_selected_sum: i32 = BTreeSet::from_iter(self.board.iter().cloned()).difference(selected_nums).sum();
-        println!("not selected sum: {}", not_selected_sum);
-        println!("last selected num: {}", last_selected);
+        // println!("not selected sum: {}", not_selected_sum);
+        // println!("last selected num: {}", last_selected);
 
         not_selected_sum * last_selected
     }
