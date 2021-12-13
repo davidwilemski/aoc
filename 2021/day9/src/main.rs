@@ -14,6 +14,7 @@ fn main() -> Result<(), std::io::Error> {
         .collect();
 
     let mut low_point_vals: Vec<u32> = Vec::new();
+    let mut low_point_idxs: Vec<usize> = Vec::new();
     for (idx, val) in grid.iter().enumerate() {
         let lower_than_vertical_adjacent = if is_top_row(idx, grid_width) {
             *val < grid[idx + grid_width]
@@ -33,6 +34,7 @@ fn main() -> Result<(), std::io::Error> {
 
         if lower_than_horizontal_adjacent && lower_than_vertical_adjacent {
             low_point_vals.push(*val);
+            low_point_idxs.push(idx);
         }
     }
 
@@ -40,7 +42,62 @@ fn main() -> Result<(), std::io::Error> {
 
     println!("sum of risks: {}", risks.iter().sum::<u32>());
 
+    let mut basin_sizes: Vec<usize> = low_point_idxs.iter().map(|idx| {
+        let mut visited: HashSet<usize> = HashSet::new();
+        // visited.insert(*idx);
+        basin_size(*idx, &grid, grid_width, grid_height, &mut visited)
+    }).collect();
+
+    basin_sizes.sort();
+    basin_sizes.reverse();
+
+    let three_largest = basin_sizes.get(0..3).unwrap();
+    println!("Three largest basin_sizes: {:?}, product: {}", three_largest, three_largest.iter().product::<usize>());
+
     Ok(())
+}
+
+// Do a depth first search in each direction (left, right, up, and down) until reaching a 9 (no
+// longer in the basin). Returns the size of the basin.
+fn basin_size(lowpoint: usize, grid: &Vec<u32>, grid_width: usize, grid_height: usize, visited: &mut HashSet<usize>) -> usize {
+    if grid[lowpoint] == 9 || visited.contains(&lowpoint) {
+        visited.insert(lowpoint);
+        return 0;
+    }
+    visited.insert(lowpoint);
+
+    // eprintln!("visited: {:?}", visited);
+    let above_size: usize = if !is_top_row(lowpoint, grid_width) && !visited.contains(&(lowpoint - grid_width)) {
+        // visited.insert(lowpoint - grid_width);
+        basin_size(lowpoint - grid_width, grid, grid_width, grid_height, visited)
+    } else {
+        0
+    };
+
+    let below_size: usize = if !is_bottom_row(lowpoint, grid_width, grid_height) && !visited.contains(&(lowpoint + grid_width)) {
+        // visited.insert(lowpoint + grid_width);
+        basin_size(lowpoint + grid_width, grid, grid_width, grid_height, visited)
+    } else {
+        0
+    };
+
+    let left_size: usize = if !is_left_side(lowpoint, grid_width, grid_height) && !visited.contains(&(lowpoint - 1)) {
+        // visited.insert(lowpoint - 1);
+        basin_size(lowpoint - 1, grid, grid_width, grid_height, visited)
+    } else {
+        0
+    };
+
+    let right_size: usize = if !is_right_side(lowpoint, grid_width, grid_height) && !visited.contains(&(lowpoint + 1)) {
+        // visited.insert(lowpoint + 1);
+        basin_size(lowpoint + 1, grid, grid_width, grid_height, visited)
+    } else {
+        0
+    };
+
+    // eprintln!("idx: {}, above_size: {}, below_size: {}, left_size: {}, right_size: {}", lowpoint, above_size, below_size, left_size, right_size);
+
+    1 + (above_size + below_size + left_size + right_size)
 }
 
 fn is_top_row(idx: usize, grid_width: usize) -> bool {
@@ -125,5 +182,18 @@ mod tests {
         assert_eq!(is_left_side(5, grid_width, grid_height), false);
         assert_eq!(is_left_side(6, grid_width, grid_height), true);
         assert_eq!(is_left_side(8, grid_width, grid_height), false);
+    }
+
+    #[test]
+    fn test_basin_size() {
+        let grid: Vec<u32> = vec![
+            2,1,9,9,9,4,3,2,1,0,
+            3,9,8,7,8,9,4,9,2,1,
+            9,8,5,6,7,8,9,8,9,2,
+            8,7,6,7,8,9,6,7,8,9,
+            9,8,9,9,9,6,5,6,7,8,
+        ];
+
+        assert_eq!(basin_size(1, &grid, 10, 5, &mut HashSet::new()), 3);
     }
 }
