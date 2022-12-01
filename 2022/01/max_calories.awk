@@ -34,7 +34,7 @@ END {
     print "part 2"
     # we can just sort values without worrying about original indexes since we
     # don't care what the original elf was - we just want the sum of the max 3
-    sorted_elves_count = asort(elves, sorted_elves)
+    sorted_elves_count = asort(elves, sorted_elves, "@val_num_desc")
     # print "sorted_elves_count: " sorted_elves_count
     # print "i: " i
     # for (j = sorted_elves_count ; j >= (0); j--) {
@@ -42,7 +42,7 @@ END {
     #     print j, elf, elves[elf]
     # }
     max_three_sum = 0
-    for (j = sorted_elves_count ; j >= (sorted_elves_count - 2); j--) {
+    for (j = 1 ; j < 4; j++) {
         elf = sorted_elves[j]
         print j, elf #, elves[elf]
         max_three_sum += elf
