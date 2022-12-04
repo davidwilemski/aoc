@@ -1,11 +1,23 @@
 use std::io::prelude::*;
 use std::io::BufReader;
-use std::collections::BTreeSet;
 use std::str::FromStr;
 
 struct Range {
     start: u32,
     end: u32,
+}
+
+impl Range {
+    // Only checks whether other is fully contained by self.
+    fn full_overlap(&self, other: &Range) -> bool {
+        self.start <= other.start && self.end >= other.end
+    }
+
+    // Checks if there's any overlap in either direction (does not require 2 calls).
+    fn any_overlap(&self, other: &Range) -> bool {
+        (self.start < other.start && other.start <= self.end) || (self.start >= other.start && self.start <= other.end)
+    }
+
 }
 
 impl FromStr for Range {
@@ -38,16 +50,13 @@ fn main() -> Result<(), std::io::Error> {
         let range1: Range = parts[0].parse().unwrap();
         let range2: Range = parts[1].parse().unwrap();
 
-        let r1 = BTreeSet::from_iter((range1.start)..=(range1.end));
-        let r2 = BTreeSet::from_iter((range2.start)..=(range2.end));
-        if r1.difference(&r2).collect::<BTreeSet<&u32>>().is_empty() || r2.difference(&r1).collect::<BTreeSet<&u32>>().is_empty() {
+        if range1.full_overlap(&range2) || range2.full_overlap(&range1) {
             full_overlap += 1;
         }
 
-        if r1.intersection(&r2).next().is_some() {
+        if range1.any_overlap(&range2) {
             any_overlap += 1;
         }
-
     }
 
     println!("full overlap count: {:?}", full_overlap);
