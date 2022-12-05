@@ -14,6 +14,7 @@ fn main() -> Result<(), std::io::Error> {
         .expect("num_stacks missing");
     let num_stacks = num_stacks_arg.parse::<usize>()
         .expect("failed to parse arg");
+    let move_multiple = args.next().is_some();
 
     let stdin = std::io::stdin();
     let reader = BufReader::new(stdin);
@@ -75,9 +76,20 @@ fn main() -> Result<(), std::io::Error> {
     println!("stacks at start: {:?}", stacks);
 
     for command in commands {
-        for _ in 0..command.count {
-            if let Some(c) = stacks[command.from].pop() {
-                stacks[command.to].push(c);
+        if move_multiple {
+            let mut moved_stack = vec![];
+            for _ in 0..command.count {
+                if let Some(c) = stacks[command.from].pop() {
+                    moved_stack.push(c);
+                }
+            }
+            moved_stack.reverse();
+            stacks[command.to].extend(moved_stack);
+        } else {
+            for _ in 0..command.count {
+                if let Some(c) = stacks[command.from].pop() {
+                    stacks[command.to].push(c);
+                }
             }
         }
     }
