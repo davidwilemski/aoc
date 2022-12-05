@@ -76,21 +76,19 @@ fn main() -> Result<(), std::io::Error> {
     println!("stacks at start: {:?}", stacks);
 
     for command in commands {
-        if move_multiple {
-            let mut moved_stack = vec![];
-            for _ in 0..command.count {
-                if let Some(c) = stacks[command.from].pop() {
+        let mut moved_stack = vec![];
+        for _ in 0..command.count {
+            if let Some(c) = stacks[command.from].pop() {
+                if move_multiple {
                     moved_stack.push(c);
-                }
-            }
-            moved_stack.reverse();
-            stacks[command.to].extend(moved_stack);
-        } else {
-            for _ in 0..command.count {
-                if let Some(c) = stacks[command.from].pop() {
+                } else {
                     stacks[command.to].push(c);
                 }
             }
+        }
+        if move_multiple {
+            moved_stack.reverse();
+            stacks[command.to].extend(moved_stack);
         }
     }
 
