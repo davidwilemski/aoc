@@ -93,5 +93,27 @@ fn main() -> Result<(), std::io::Error> {
 
     println!("sum of dirs <= 10000 bytes: {}", size_sum);
 
+    // Find smallest dir that's big enough to delete
+    // FS has 70_000_000 bytes and needs at least 30_000_000 free
+    let fs_size = 70_000_000;
+    let required_free = 30_000_000;
+    let current_free = fs_size - root.borrow().recursive_size();
+    let required_to_delete = required_free - current_free;
+    eprintln!("need to free {:?} bytes", required_to_delete);
+
+    let mut min_deletable_size = required_free + 1;
+    dir_stack.clear();
+    dir_stack.push(root.clone());
+    while !dir_stack.is_empty() {
+        let d = dir_stack.pop().expect("not empty");
+        let size = d.borrow().recursive_size();
+        if size < min_deletable_size && size >= required_to_delete {
+            min_deletable_size = size;
+        }
+        dir_stack.extend(d.borrow().children.clone());
+    }
+
+    println!("size of directory to delete: {} bytes", min_deletable_size);
+
     Ok(())
 }
